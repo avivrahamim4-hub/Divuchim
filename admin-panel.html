@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>לוח בקרה – אחראית התנהגויות</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2ec; --card-bg: #fff; --deep: #1a1a2e;
+    --accent: #c8520a; --accent2: #e87020;
+    --muted: #7a7a8a; --border: #e0dcd4;
+    --new: #fff8f0; --new-border: #e8a020; --tag-bg: #f0ede8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', sans-serif; background: var(--bg); min-height: 100vh; padding: 24px 16px; }
+  .topbar {
+    max-width: 700px; margin: 0 auto 28px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .topbar-title { display: flex; align-items: center; gap: 14px; }
+  .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 22px; box-shadow: 0 4px 16px rgba(200,82,10,0.25);
+  }
+  h1 { font-family: 'Frank Ruhl Libre', serif; font-size: 1.4rem; color: var(--deep); font-weight: 900; line-height: 1.1; }
+  h1 small { display: block; font-family: 'Heebo', sans-serif; font-size: 0.78rem; font-weight: 300; color: var(--muted); margin-top: 2px; }
+  .notif-btn {
+    padding: 10px 20px; background: var(--deep); color: #fff; border: none;
+    border-radius: 10px; font-family: 'Heebo', sans-serif; font-size: 0.85rem;
+    cursor: pointer; transition: background 0.2s; white-space: nowrap;
+  }
+  .notif-btn:hover { background: var(--accent); }
+  .notif-btn.enabled { background: #2a7a3a; }
+  .main { max-width: 700px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .badge { background: var(--accent); color: white; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 500; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.9rem; line-height: 1.6; }
+  .report-card {
+    background: var(--card-bg); border-radius: 16px; padding: 20px 22px;
+    margin-bottom: 14px; border: 1.5px solid var(--border);
+    animation: slide-in 0.4s ease;
+  }
+  @keyframes slide-in { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .report-card.is-new { background: var(--new); border-color: var(--new-border); box-shadow: 0 4px 20px rgba(232,160,32,0.15); }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .card-title { font-family: 'Frank Ruhl Libre', serif; font-size: 1.1rem; font-weight: 700; color: var(--deep); }
+  .card-time { font-size: 0.78rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .tag { background: var(--tag-bg); border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; color: #444; }
+  .tag-new { background: var(--accent); color: white; font-weight: 500; }
+  .description { font-size: 0.9rem; color: #333; line-height: 1.6; background: rgba(0,0,0,0.03); border-radius: 8px; padding: 10px 14px; }
+  .clear-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 0.78rem; color: var(--muted); cursor: pointer; font-family: 'Heebo', sans-serif; transition: all 0.2s; }
+  .clear-btn:hover { border-color: #cc3344; color: #cc3344; }
+  .toast {
+    position: fixed; top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: var(--deep); color: white;
+    padding: 14px 24px; border-radius: 14px; font-size: 0.9rem; font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 1000; max-width: 90vw; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #aaa; margin-left: 6px; vertical-align: middle;
+  }
+  .status-dot.live { background: #2a7a3a; box-shadow: 0 0 6px #2a7a3a; animation: blink 2s infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-title">
+    <div class="logo">📋</div>
+    <h1>לוח בקרה<small>אחראית התנהגויות <span class="status-dot" id="statusDot"></span></small></h1>
+  </div>
+  <button class="notif-btn" id="notifBtn" onclick="requestNotifications()">🔔 הפעל התראות</button>
+</div>
+
+<div class="main">
+  <div class="section-label">
+    <span>דיווחים שהתקבלו</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="badge" id="countBadge">0</span>
+      <button class="clear-btn" onclick="confirmClear()">נקה הכל</button>
+    </div>
+  </div>
+  <div id="reportsList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot, deleteDoc, getDocs }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCR-TKFi_3-ZtS0LXCuioi01cTosvYDYz8",
+    authDomain: "event-reporting2026.firebaseapp.com",
+    projectId: "event-reporting2026",
+    storageBucket: "event-reporting2026.firebasestorage.app",
+    messagingSenderId: "84768637326",
+    appId: "1:84768637326:web:40130694c28c06b3c164df"
+  });
+  const db = getFirestore(app);
+
+  let isFirstLoad = true;
+  let knownIds = new Set();
+  let notificationsEnabled = false;
+  let allDocs = [];
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleString('he-IL', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function render(docs) {
+    allDocs = docs;
+    document.getElementById('countBadge').textContent = docs.length;
+    const list = document.getElementById('reportsList');
+    if (docs.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="emoji">🌙</div><p>אין דיווחים עדיין.<br>כשמרכז שבט ישלח דיווח, הוא יופיע כאן.</p></div>`;
+      return;
+    }
+    list.innerHTML = docs.map(d => {
+      const isNew = !knownIds.has(d.id);
+      return `<div class="report-card ${isNew ? 'is-new' : ''}">
+        <div class="card-top">
+          <div class="card-title">${d.coordinator} · ${d.tribe}</div>
+          <div class="card-time">${formatTime(d.createdAt)}</div>
+        </div>
+        <div class="tags">
+          ${isNew ? '<span class="tag tag-new">✨ חדש</span>' : ''}
+          <span class="tag">🕐 ${d.eventTime}</span>
+          <span class="tag">👥 ${d.ageGroup}</span>
+        </div>
+        <div class="description">${d.description}</div>
+      </div>`;
+    }).join('');
+    docs.forEach(d => knownIds.add(d.id));
+  }
+
+  // Real-time listener
+  const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, (snapshot) => {
+    document.getElementById('statusDot').className = 'status-dot live';
+
+    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (!isFirstLoad) {
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const r = { id: change.doc.id, ...change.doc.data() };
+          if (!knownIds.has(r.id)) {
+            showToast(`🚨 דיווח חדש מ${r.coordinator} – ${r.tribe}`);
+            if (notificationsEnabled && Notification.permission === 'granted') {
+              new Notification(`🚨 דיווח חדש – ${r.tribe}`, {
+                body: `${r.coordinator} | ${r.ageGroup} | ${r.eventTime}\n${r.description}`,
+                tag: r.id
+              });
+            }
+          }
+        }
+      });
+    }
+
+    isFirstLoad = false;
+    render(docs);
+  }, (err) => {
+    console.error(err);
+    document.getElementById('statusDot').className = 'status-dot';
+  });
+
+  window.requestNotifications = function() {
+    if (!('Notification' in window)) { showToast('❌ הדפדפן הזה לא תומך בהתראות'); return; }
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') {
+        notificationsEnabled = true;
+        const btn = document.getElementById('notifBtn');
+        btn.textContent = '✅ התראות פעילות'; btn.classList.add('enabled');
+        showToast('✅ התראות הופעלו!');
+      } else { showToast('❌ לא אושרו הרשאות התראות'); }
+    });
+  };
+
+  window.confirmClear = async function() {
+    if (!confirm('האם למחוק את כל הדיווחים מהמערכת?')) return;
+    const snap = await getDocs(collection(db, 'reports'));
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+    knownIds.clear();
+    showToast('🗑️ כל הדיווחים נמחקו');
+  };
+
+  // Auto-enable if already granted
+  if (Notification.permission === 'granted') {
+    notificationsEnabled = true;
+    const btn = document.getElementById('notifBtn');
+    btn.textContent = '✅ התראות פעילות'; btn.classList.add('enabled');
+  }
+</script>
+</body>
+</html>

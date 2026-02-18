@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>דיווח אירוע חריג</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep: #0f1923; --mid: #1a2a3a;
+    --accent: #e8a020; --accent2: #f0c060;
+    --light: #f5f0e8; --muted: #8899aa; --danger: #cc3344;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--deep); min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  body::before {
+    content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 60% 30%, rgba(232,160,32,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .container { width: 100%; max-width: 560px; position: relative; z-index: 1; }
+  .header { text-align: center; margin-bottom: 36px; }
+  .alert-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 20px; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; font-size: 28px;
+    box-shadow: 0 8px 32px rgba(232,160,32,0.3);
+    animation: pulse-icon 3s ease-in-out infinite;
+  }
+  @keyframes pulse-icon {
+    0%,100% { box-shadow: 0 8px 32px rgba(232,160,32,0.3); }
+    50% { box-shadow: 0 8px 48px rgba(232,160,32,0.5); }
+  }
+  .header h1 { font-family: 'Frank Ruhl Libre', serif; font-size: 2rem; font-weight: 900; color: var(--light); }
+  .header p { color: var(--muted); font-size: 0.9rem; margin-top: 8px; font-weight: 300; }
+  .card {
+    background: var(--mid); border-radius: 24px; padding: 32px;
+    border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+  }
+  .field { margin-bottom: 22px; }
+  label { display: block; color: var(--light); font-size: 0.82rem; font-weight: 500; margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+  label span.req { color: var(--accent); margin-right: 3px; }
+  input, select, textarea {
+    width: 100%; background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1); border-radius: 12px;
+    padding: 13px 16px; color: var(--light);
+    font-family: 'Heebo', sans-serif; font-size: 0.95rem;
+    transition: border-color 0.2s, background 0.2s; outline: none; -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); background: rgba(232,160,32,0.06); }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.7; }
+  select option { background: var(--mid); color: var(--light); }
+  textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .submit-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: var(--deep); border: none; border-radius: 14px;
+    font-family: 'Frank Ruhl Libre', serif; font-size: 1.1rem; font-weight: 700;
+    cursor: pointer; margin-top: 8px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(232,160,32,0.3);
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(232,160,32,0.4); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .success-view { display: none; text-align: center; padding: 20px 0; }
+  .success-icon {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, #22aa66, #44cc88);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; font-size: 36px;
+    box-shadow: 0 8px 32px rgba(34,170,102,0.4);
+    animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes pop-in { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-view h2 { font-family: 'Frank Ruhl Libre', serif; font-size: 1.6rem; color: var(--light); margin-bottom: 12px; }
+  .success-view p { color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+  .new-report-btn {
+    margin-top: 28px; padding: 12px 28px; background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.2); border-radius: 10px;
+    color: var(--muted); font-family: 'Heebo', sans-serif; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .new-report-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: 5px; display: none; }
+  input.invalid, select.invalid, textarea.invalid { border-color: var(--danger); }
+  @media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } .card { padding: 24px 20px; } .header h1 { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="alert-icon">🚨</div>
+    <h1>דיווח אירוע חריג</h1>
+    <p>מלאו את הטופס ואחראית ההתנהגויות תקבל התראה מיידית</p>
+  </div>
+  <div class="card">
+    <form id="reportForm">
+      <div class="row2">
+        <div class="field">
+          <label><span class="req">*</span>שם המרכז</label>
+          <input type="text" id="coordinator" placeholder="שם מלא" />
+          <div class="error-msg" id="err-coordinator">שדה חובה</div>
+        </div>
+        <div class="field">
+          <label><span class="req">*</span>שם השבט</label>
+          <input type="text" id="tribe" placeholder="שם השבט" />
+          <div class="error-msg" id="err-tribe">שדה חובה</div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label><span class="req">*</span>שעת האירוע</label>
+          <input type="time" id="eventTime" />
+          <div class="error-msg" id="err-eventTime">שדה חובה</div>
+        </div>
+        <div class="field">
+          <label><span class="req">*</span>שכבת גיל</label>
+          <select id="ageGroup">
+            <option value="">בחרו שכבה</option>
+            <option>גורים</option><option>שועלים</option><option>צופים</option>
+            <option>בוגרים</option><option>מכינה</option><option>מדריכים</option><option>מעורב</option>
+          </select>
+          <div class="error-msg" id="err-ageGroup">שדה חובה</div>
+        </div>
+      </div>
+      <div class="field">
+        <label><span class="req">*</span>תיאור האירוע</label>
+        <textarea id="description" placeholder="תארו בקצרה מה קרה..."></textarea>
+        <div class="error-msg" id="err-description">שדה חובה</div>
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">שליחת דיווח 🔔</button>
+    </form>
+    <div class="success-view" id="successView">
+      <div class="success-icon">✓</div>
+      <h2>הדיווח התקבל!</h2>
+      <p>אחראית ההתנהגויות קיבלה את הדיווח<br>ותחזור אליך בהקדם האפשרי.</p>
+      <button class="new-report-btn" id="newReportBtn">שליחת דיווח נוסף</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCR-TKFi_3-ZtS0LXCuioi01cTosvYDYz8",
+    authDomain: "event-reporting2026.firebaseapp.com",
+    projectId: "event-reporting2026",
+    storageBucket: "event-reporting2026.firebasestorage.app",
+    messagingSenderId: "84768637326",
+    appId: "1:84768637326:web:40130694c28c06b3c164df"
+  });
+  const db = getFirestore(app);
+
+  const fields = ['coordinator','tribe','eventTime','ageGroup','description'];
+
+  function validate() {
+    let ok = true;
+    fields.forEach(f => {
+      const el = document.getElementById(f);
+      const err = document.getElementById('err-' + f);
+      if (!el.value.trim()) { el.classList.add('invalid'); err.style.display = 'block'; ok = false; }
+      else { el.classList.remove('invalid'); err.style.display = 'none'; }
+    });
+    return ok;
+  }
+
+  document.getElementById('reportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!validate()) return;
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'שולח...';
+    try {
+      await addDoc(collection(db, 'reports'), {
+        coordinator: document.getElementById('coordinator').value.trim(),
+        tribe: document.getElementById('tribe').value.trim(),
+        eventTime: document.getElementById('eventTime').value,
+        ageGroup: document.getElementById('ageGroup').value,
+        description: document.getElementById('description').value.trim(),
+        createdAt: serverTimestamp()
+      });
+      document.getElementById('reportForm').style.display = 'none';
+      document.getElementById('successView').style.display = 'block';
+    } catch(err) {
+      alert('שגיאה בשליחה. אנא נסו שוב.');
+      console.error(err);
+      btn.disabled = false; btn.textContent = 'שליחת דיווח 🔔';
+    }
+  });
+
+  document.getElementById('newReportBtn').addEventListener('click', function() {
+    fields.forEach(f => {
+      const el = document.getElementById(f); el.value = ''; el.classList.remove('invalid');
+      document.getElementById('err-' + f).style.display = 'none';
+    });
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = false; btn.textContent = 'שליחת דיווח 🔔';
+    document.getElementById('reportForm').style.display = 'block';
+    document.getElementById('successView').style.display = 'none';
+  });
+
+  fields.forEach(f => {
+    document.getElementById(f).addEventListener('input', function() {
+      if (this.value.trim()) { this.classList.remove('invalid'); document.getElementById('err-'+f).style.display='none'; }
+    });
+  });
+</script>
+</body>
+</html>
